@@ -2,7 +2,7 @@
 const express = require('express');
 const multer = require('multer');
 const AWS = require('aws-sdk');
-const cors = require('cors');  // Import CORS
+const cors = require('cors');
 require('dotenv').config();
 
 // Initialize the Express app
@@ -10,7 +10,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Enable CORS for all routes
-app.use(cors());  // Add this line
+app.use(cors());
 
 // Configure AWS SDK
 AWS.config.update({
@@ -35,7 +35,7 @@ app.post('/api/ppe/upload', upload.single('image'), (req, res) => {
 
   const params = {
     Image: {
-      Bytes: req.file.buffer,  // Use buffer directly for memory storage
+      Bytes: req.file.buffer,
     },
     MaxLabels: 10,
     MinConfidence: 75,
@@ -45,11 +45,8 @@ app.post('/api/ppe/upload', upload.single('image'), (req, res) => {
   rekognition.detectLabels(params, (err, data) => {
     if (err) {
       console.error("Error calling Rekognition:", err);
-      return res.status(500).json({ error: 'Error detecting PPE', details: err.message });
+      return res.status(500).json({ error: 'Error detecting PPE' });
     }
-
-    // Log the entire response data for debugging
-    console.log("Rekognition response data:", JSON.stringify(data, null, 2));
 
     // Log the detected labels
     const labels = data.Labels.map(label => ({
@@ -58,10 +55,9 @@ app.post('/api/ppe/upload', upload.single('image'), (req, res) => {
     }));
 
     // Check if any of the detected labels are PPE
+    const ppeLabels = ['face', 'mask', 'helmet', 'glove', 'goggles', 'safety gear', 'protective equipment'];
     const ppeDetected = labels.some(label => 
-      ['face', 'mask', 'helmet', 'glove', 'goggles', 'safety gear', 'protective equipment'].some(ppe => 
-        label.Name.toLowerCase().includes(ppe)
-      )
+      ppeLabels.some(ppe => label.Name.toLowerCase().includes(ppe))
     );
 
     return res.json({ ppeDetected, labels });
