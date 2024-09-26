@@ -1,17 +1,42 @@
 const express = require('express');
-const { detectPPE } = require('../rekognition');
 const multer = require('multer');
+const AWS = require('aws-sdk');
 
 const router = express.Router();
-const upload = multer(); // For handling multipart form data
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/detect', upload.single('image'), async (req, res) => {
+AWS.config.update({ region: 'us-west-2' }); // Replace with your region
+const rekognition = new AWS.Rekognition();
+
+// API Endpoint to handle image upload
+router.post('/upload', upload.single('image'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded' });
+  }
+
+  const params = {
+    Image: {
+      Bytes: req.file.buffer,
+    },
+    // Optional: You can specify specific label detection parameters
+    MaxLabels: 10,
+    MinConfidence: 75,
+  };
+
   try {
-    const imageBuffer = req.file.buffer;
-    const ppeDetectionResults = await detectPPE(imageBuffer);
-    res.json(ppeDetectionResults);
+    const data = await rekognition.detectLabels(params).promise();
+    const detectedLabels = data.Labels.map(label => label.Name);
+    
+    // Check if PPE-related labels are present
+    const ppeDetected = detectedLabels.some(label => label.toLowerCase().includes('ppe'));
+    
+    res.json({
+      message: ppeDetected ? 'PPE detected' : 'No PPE detected',
+      detectedLabels: detectedLabels,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error detecting labels:', error);
+    res.status(500).json({ message: 'Error processing image' });
   }
 });
 
