@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 const ImageUpload = () => {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [message, setMessage] = useState('');
+  const [file, setFile] = useState(null);
+  const [responseData, setResponseData] = useState(null);
 
-  const handleFileChange = (event) => {
-    setSelectedFile(event.target.files[0]);
+  const handleImageChange = (e) => {
+    setFile(e.target.files[0]);
   };
 
-  const handleImageUpload = async (file) => {
+  const handleImageUpload = async () => {
     const formData = new FormData();
     formData.append('image', file);
 
@@ -19,30 +19,44 @@ const ImageUpload = () => {
           'Content-Type': 'multipart/form-data',
         },
       });
-      setMessage(response.data.message); // Set the response message
-      console.log('Detected Labels:', response.data.detectedLabels);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      setMessage('Error uploading image');
-    }
-  };
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    if (selectedFile) {
-      handleImageUpload(selectedFile); // Call the upload function with the selected file
-    } else {
-      setMessage('Please select an image file');
+      console.log("Response from server:", response.data);
+      setResponseData(response.data);
+
+      // Check for detected labels
+      if (response.data.labels) {
+        console.log("Detected Labels:", response.data.labels);
+      } else {
+        console.error("No labels detected");
+      }
+
+      // Handle PPE detection result
+      const ppeDetected = response.data.ppeDetected;
+      console.log("PPE Detected:", ppeDetected);
+
+    } catch (error) {
+      console.error("Error uploading image:", error);
     }
   };
 
   return (
     <div>
-      <form onSubmit={handleSubmit}>
-        <input type="file" onChange={handleFileChange} accept="image/*" required />
-        <button type="submit">Upload Image</button>
-      </form>
-      {message && <p>{message}</p>} {/* Display the message */}
+      <h2>PPE Detection Upload</h2>
+      <input type="file" onChange={handleImageChange} />
+      <button onClick={handleImageUpload}>Upload Image</button>
+
+      {responseData && (
+        <div>
+          <h3>Results:</h3>
+          <p>PPE Detected: {responseData.ppeDetected ? 'Yes' : 'No'}</p>
+          <h4>Detected Labels:</h4>
+          <ul>
+            {responseData.labels && responseData.labels.map((label, index) => (
+              <li key={index}>{label.Name} - Confidence: {label.Confidence.toFixed(2)}%</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

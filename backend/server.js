@@ -14,7 +14,7 @@ app.use(cors());  // Add this line
 
 // Configure AWS SDK
 AWS.config.update({
-  region: process.env.AWS_REGION,
+  region: "us-west-2",
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
 });
@@ -45,8 +45,11 @@ app.post('/api/ppe/upload', upload.single('image'), (req, res) => {
   rekognition.detectLabels(params, (err, data) => {
     if (err) {
       console.error("Error calling Rekognition:", err);
-      return res.status(500).json({ error: 'Error detecting PPE' });
+      return res.status(500).json({ error: 'Error detecting PPE', details: err.message });
     }
+
+    // Log the entire response data for debugging
+    console.log("Rekognition response data:", JSON.stringify(data, null, 2));
 
     // Log the detected labels
     const labels = data.Labels.map(label => ({
