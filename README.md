@@ -25,6 +25,6 @@ Make sure you have the following installed:
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/
-[Shubham Kumar Singh Shubham-1-cell/PPE-Detection.git](https://github.com/Shubham-1-cell/PPE-Detection.git)
+   git clone https://github.com/Shubham-1-cell/PPE-Detection
+
    cd PPE-Detection
